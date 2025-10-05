@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do Web App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for better aesthetics */
+        .task-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .task-list::-webkit-scrollbar-track {
+            background: #2d3748; /* gray-800 */
+        }
+        .task-list::-webkit-scrollbar-thumb {
+            background: #4a5568; /* gray-600 */
+            border-radius: 4px;
+        }
+        .task-list::-webkit-scrollbar-thumb:hover {
+            background: #718096; /* gray-500 */
+        }
+        .completed-task {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        /* Simple animation for modal */
+        .modal-enter {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .modal-enter-active {
+            opacity: 1;
+            transform: scale(1);
+            transition: all 0.2s ease-out;
+        }
+        .modal-leave-active {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 0.2s ease-in;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-3xl mx-auto bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-700">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-500 p-2 rounded-lg">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                </div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-100">My To-Do List</h1>
+            </div>
+        </div>
+
+        <!-- Add Task Form -->
+        <form id="task-form" class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+            <input type="text" id="task-input" placeholder="What needs to be done?" class="md:col-span-3 bg-gray-700 border-2 border-gray-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" required>
+            <input type="date" id="task-date" class="md:col-span-1 bg-gray-700 border-2 border-gray-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" title="Task due date">
+            <input type="time" id="task-time" class="md:col-span-1 bg-gray-700 border-2 border-gray-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" title="Task due time">
+            <button type="submit" class="md:col-span-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition shadow-md hover:shadow-lg">
+                <i class="fas fa-plus mr-2"></i> Add
+            </button>
+        </form>
+        
+        <!-- Task List Container -->
+        <div id="task-list-container" class="task-list bg-gray-900/50 p-4 rounded-xl max-h-96 overflow-y-auto">
+            <!-- Tasks will be injected here by JavaScript -->
+        </div>
+        
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden modal-leave-active">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md modal-enter">
+            <h2 class="text-2xl font-bold mb-6 text-gray-100">Edit Task</h2>
+            <form id="edit-form">
+                <input type="hidden" id="edit-task-id">
+                <div class="mb-4">
+                    <label for="edit-task-text" class="block text-sm font-medium text-gray-400 mb-2">Task Description</label>
+                    <input type="text" id="edit-task-text" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label for="edit-task-date" class="block text-sm font-medium text-gray-400 mb-2">Due Date</label>
+                        <input type="date" id="edit-task-date" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="edit-task-time" class="block text-sm font-medium text-gray-400 mb-2">Due Time</label>
+                        <input type="time" id="edit-task-time" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancel-edit" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition">Cancel</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskForm = document.getElementById('task-form');
+            const taskInput = document.getElementById('task-input');
+            const taskDateInput = document.getElementById('task-date');
+            const taskTimeInput = document.getElementById('task-time');
+            const taskListContainer = document.getElementById('task-list-container');
+            
+            // Edit Modal elements
+            const editModal = document.getElementById('edit-modal');
+            const editForm = document.getElementById('edit-form');
+            const cancelEditBtn = document.getElementById('cancel-edit');
+            const editTaskIdInput = document.getElementById('edit-task-id');
+            const editTaskTextInput = document.getElementById('edit-task-text');
+            const editTaskDateInput = document.getElementById('edit-task-date');
+            const editTaskTimeInput = document.getElementById('edit-task-time');
+
+            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+            // --- Core Functions ---
+
+            const saveTasks = () => {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            };
+
+            const renderTasks = () => {
+                taskListContainer.innerHTML = '';
+                if (tasks.length === 0) {
+                    taskListContainer.innerHTML = `<p class="text-gray-500 text-center py-4">No tasks yet. Add one to get started!</p>`;
+                    return;
+                }
+
+                tasks.sort((a, b) => a.completed - b.completed || new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
+
+                tasks.forEach(task => {
+                    const taskElement = document.createElement('div');
+                    taskElement.className = `flex items-center justify-between bg-gray-800 p-4 rounded-lg mb-3 transition-all duration-300 ${task.completed ? 'completed-task' : ''}`;
+                    taskElement.setAttribute('data-id', task.id);
+
+                    const formattedDate = task.date ? new Date(task.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
+                    const formattedTime = task.time ? new Date('1970-01-01T' + task.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
+
+                    taskElement.innerHTML = `
+                        <div class="flex items-center flex-grow">
+                            <input type="checkbox" class="task-checkbox h-6 w-6 rounded-md bg-gray-700 border-gray-500 text-indigo-500 focus:ring-indigo-400 cursor-pointer" ${task.completed ? 'checked' : ''}>
+                            <div class="ml-4 flex-grow">
+                                <p class="font-semibold text-gray-200">${task.text}</p>
+                                ${ (task.date || task.time) ? `<span class="text-sm text-gray-400">${formattedDate} ${formattedTime}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button class="edit-btn text-blue-400 hover:text-blue-300 transition"><i class="fas fa-edit"></i></button>
+                            <button class="delete-btn text-red-500 hover:text-red-400 transition"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `;
+                    taskListContainer.appendChild(taskElement);
+                });
+            };
+            
+            // --- Event Handlers ---
+
+            const addTask = (e) => {
+                e.preventDefault();
+                const text = taskInput.value.trim();
+                const date = taskDateInput.value;
+                const time = taskTimeInput.value;
+
+                if (text === '') return;
+
+                const newTask = {
+                    id: Date.now(),
+                    text,
+                    date,
+                    time,
+                    completed: false
+                };
+
+                tasks.push(newTask);
+                saveTasks();
+                renderTasks();
+                taskForm.reset();
+                taskInput.focus();
+            };
+            
+            const handleTaskListClick = (e) => {
+                const target = e.target;
+                const taskElement = target.closest('[data-id]');
+                if (!taskElement) return;
+
+                const taskId = Number(taskElement.getAttribute('data-id'));
+
+                // Toggle complete
+                if (target.classList.contains('task-checkbox')) {
+                    const task = tasks.find(t => t.id === taskId);
+                    task.completed = !task.completed;
+                    saveTasks();
+                    renderTasks();
+                }
+
+                // Delete task
+                if (target.closest('.delete-btn')) {
+                    tasks = tasks.filter(t => t.id !== taskId);
+                    saveTasks();
+                    renderTasks();
+                }
+
+                // Edit task
+                if (target.closest('.edit-btn')) {
+                    const task = tasks.find(t => t.id === taskId);
+                    editTaskIdInput.value = task.id;
+                    editTaskTextInput.value = task.text;
+                    editTaskDateInput.value = task.date;
+                    editTaskTimeInput.value = task.time;
+                    showModal();
+                }
+            };
+
+            const updateTask = (e) => {
+                e.preventDefault();
+                const taskId = Number(editTaskIdInput.value);
+                const task = tasks.find(t => t.id === taskId);
+
+                if (task) {
+                    task.text = editTaskTextInput.value.trim();
+                    task.date = editTaskDateInput.value;
+                    task.time = editTaskTimeInput.value;
+                    saveTasks();
+                    renderTasks();
+                    hideModal();
+                }
+            };
+            
+            // --- Modal Visibility ---
+            
+            const showModal = () => {
+                editModal.classList.remove('hidden');
+                setTimeout(() => editModal.classList.remove('modal-leave-active'), 10);
+            };
+
+            const hideModal = () => {
+                editModal.classList.add('modal-leave-active');
+                setTimeout(() => editModal.classList.add('hidden'), 200);
+            };
+
+            // --- Initial Setup ---
+
+            taskForm.addEventListener('submit', addTask);
+            taskListContainer.addEventListener('click', handleTaskListClick);
+            editForm.addEventListener('submit', updateTask);
+            cancelEditBtn.addEventListener('click', hideModal);
+            
+            // Close modal on escape key
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !editModal.classList.contains('hidden')) {
+                    hideModal();
+                }
+            });
+
+            renderTasks();
+        });
+    </script>
+</body>
+</html>
